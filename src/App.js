@@ -1,18 +1,61 @@
 import React, { Component } from 'react';
-import QRReader from 'react-qr-reader';
-import './App.css';
+import { BrowserRouter as Router, Route, Link } from "react-router-dom";
+import Home from './components/home/Home'
+import WalletService from './services/Wallet'
+
+import './App.css'
 
 class App extends Component {
+
+  constructor(props) {
+    super(props);
+
+    // wallet stuff
+    let walletService = new WalletService();
+
+    this.state = {
+      delay: 300,
+      result: "No result",
+      showQR: false,
+    }
+
+    this.handleScan = this.handleScan.bind(this)
+  }
+
+  handleScan(data) {
+    if (data) {
+      const pasredData = JSON.stringify(data)
+      this.setState({
+        result: data,
+        contract: pasredData.contract,
+        hexData: pasredData.data,
+      });
+    }
+  }
+  
+  handleError(err) {
+    console.error(err);
+  }
+
+  scanQR(){
+
+  }
+
   render() {
+
     return (
-      <div className="App">
-        <header className="App-header">
-          <p>
-            Playing for keETHs
-          </p>
-        </header>
-        <QRReader />
-      </div>
+      <Router>
+        <div className="App">
+          <header className="App-header">
+            <p>
+              Playing for ETHs
+            </p>
+          </header>
+          
+          <Route path="/:contract" component={Home} />
+
+        </div>
+      </Router>
     );
   }
 }
