@@ -51,8 +51,9 @@ class App extends Component {
               Playing for ETHs
             </p>
           </header>
-          
+           
           <Route path="/:contract" component={Home} />
+          <Route path="/" component={Home} />
 
         </div>
       </Router>
