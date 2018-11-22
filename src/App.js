@@ -49,7 +49,6 @@ class App extends Component {
           </header>
            
           <Route path="/:contract" component={Home} />
-          <Route path="/" component={Home} />
 
         </div>
       </Router>
