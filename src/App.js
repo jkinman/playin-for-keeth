@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 import Home from './components/home/Home'
-import WalletService from './services/Wallet'
 
 import './App.css'
 
@@ -9,9 +8,6 @@ class App extends Component {
 
   constructor(props) {
     super(props);
-
-    // wallet stuff
-    let walletService = new WalletService();
 
     this.state = {
       delay: 300,

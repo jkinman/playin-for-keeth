@@ -27,4 +27,8 @@ export default class WalletService {
 		console.log(keystore);
 
 	}
+
+	get publicKey() {
+		return this._wallet.getPublicKeyString();
+	}
 }
