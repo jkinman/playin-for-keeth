@@ -18,7 +18,8 @@ class Home extends Component {
 			gameInProgress: false,
 			game: {},
 			name: "",
-			balance: 0
+			balance: 0,
+			value: ""
 		}
 		// wallet stuff
 		this.walletService = new WalletService();
@@ -58,6 +59,14 @@ class Home extends Component {
 		
 	}
 
+	async componentDidUpdate(prevProps, prevState) {
+		if (this.state.gameInProgress && !prevState.gameInProgress) {
+      const game = await leaderboard.methods.game().call();
+      this.setState({ game });
+      console.log('game', game);
+    }
+	}
+
 	addPlayerToLeaderboard = async () => {
 		console.log('clicked');
 		const nameHexcode = this.web3.eth.abi.encodeFunctionCall({
@@ -82,6 +91,25 @@ class Home extends Component {
 		return this.sendTransaction(txCount, txData);
 	}
 
+	createGame = async () => {
+		const gameHexCode = this.web3.eth.abi.encodeFunctionSignature("createGame()");
+
+		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
+		// construct the transaction data
+		const value = this.state.value ? this.state.value : "0";
+		const txData = {
+			nonce: this.web3.utils.toHex(txCount),
+			gasLimit: this.web3.utils.toHex(5000000),
+			gasPrice: this.web3.utils.toHex(2e9), // 2 Gwei
+			to: address,
+			from: this.walletService.publicKey,
+			data: gameHexCode,
+			value: this.web3.utils.toHex(this.web3.utils.toWei(value, "ether"))
+		};
+
+		return this.sendTransaction(txCount, txData);
+	}
+
 	sendTransaction = async (txCount, txData) => {
 		const transaction = new Tx(txData);
 		const pk = new Buffer(localStorage.privateKey.substring(2, localStorage.privateKey.length), 'hex')
@@ -100,6 +128,7 @@ class Home extends Component {
 					<p>Fund me to play!</p>
 					<p>{this.walletService.publicKey}</p>
 					<p>Balance: {this.state.balance} ETH</p>
+					<h3>Contract Address: {address}</h3>
 					<h3>Game In Progress: {`${this.state.gameInProgress}`}</h3>
 				</Jumbotron>
 				<Jumbotron>
@@ -148,9 +177,35 @@ class Home extends Component {
 					<button onClick={() => this.addPlayerToLeaderboard()} className="btn btn-primary">Signup for Leaderboard</button>
 				</Jumbotron>
 				<Jumbotron>
-						<h1>contract</h1>
-						<p>{this.props.match.params.contract}</p>
+					<h2>Create Game</h2>
+					<div className="form-group">
+              <label>Create Game (add ETH amount to input if you want to gamble)</label>
+              <input className="form-control" onChange={(event) => {
+                this.setState({ value: event.target.value })
+              }}
+              value={this.state.value} />
+            </div>
+					<button onClick={() => this.createGame()} className="btn btn-primary">Create Game</button>
 				</Jumbotron>
+
+				<Jumbotron>
+					{this.state.gameInProgress ? 
+						<div className="row">
+							<div className="col-xs-12 col-sm-12 col-md-12">
+								<h2>Current Game</h2>
+								<ul className="list-group">
+									<li className="list-group-item">ID: {this.state.game.id}</li>
+									<li className="list-group-item">Player One: {this.state.game.firstPlayer}</li>
+									<li className="list-group-item">Player Two: {this.state.game.secondPlayer}</li>
+									<li className="list-group-item">Bet: {this.state.game.bet}</li>
+									<li className="list-group-item">Pot: {this.state.game.pot}</li>
+									<li className="list-group-item">P1 Declared Winner: {this.state.game.declaredWinnerFirstPlayer}</li>
+									<li className="list-group-item">P2 Declared Winner: {this.state.game.declaredWinnerSecondPlayer}</li>
+								</ul>
+							</div>
+						</div>
+					: null}
+				</Jumbotron> 
 			</div>
 		)
 	}
