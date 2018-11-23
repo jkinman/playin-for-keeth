@@ -3,6 +3,8 @@ import {Jumbotron} from 'reactstrap'
 import WalletService from '../../services/Wallet'
 import Web3Service from '../../services/Web3Service';
 import address from '../../address';
+import Tx from 'ethereumjs-tx'
+
 
 // Contract
 import leaderboard from '../../leaderboard';
@@ -26,7 +28,8 @@ class Home extends Component {
 	}
 
 	async componentDidMount() {
-		this.web3.eth.accounts.privateKeyToAccount(localStorage.privateKey);
+		const account = this.web3.eth.accounts.privateKeyToAccount(localStorage.privateKey);
+		console.log('acc', account);
 		let balance = await this.web3.eth.getBalance(this.walletService.publicKey);
 		this.setState({ balance: `${this.web3.utils.fromWei(balance)}` });
 		
@@ -55,7 +58,7 @@ class Home extends Component {
 		
 	}
 
-	addPlayerToLeaderboard = () => {
+	addPlayerToLeaderboard = async () => {
 		console.log('clicked');
 		const nameHexcode = this.web3.eth.abi.encodeFunctionCall({
 			name: "addPlayerToLeaderboard",
@@ -66,17 +69,27 @@ class Home extends Component {
 			}]
 		},[this.state.name]);
 
-		return this.web3.eth.accounts.signTransaction(
-			{
-				to: address,
-				data: nameHexcode
-			},
-			localStorage.privateKey
-		).then( res => {
-			console.log('res', res)
-		}).catch( err => {
-			console.log('err', err);
-		})
+		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
+		// construct the transaction data
+		const txData = {
+			nonce: this.web3.utils.toHex(txCount),
+			gasLimit: this.web3.utils.toHex(1000000),
+			gasPrice: this.web3.utils.toHex(2e9), // 2 Gwei
+			to: address,
+			from: this.walletService.publicKey,
+			data: nameHexcode
+		};
+		return this.sendTransaction(txCount, txData);
+	}
+
+	sendTransaction = async (txCount, txData) => {
+		const transaction = new Tx(txData);
+		const pk = new Buffer(localStorage.privateKey.substring(2, localStorage.privateKey.length), 'hex')
+		console.log('pk', pk);
+		transaction.sign(pk);
+		const serializedTx = transaction.serialize().toString('hex')
+		const signedTx = await this.web3.eth.sendSignedTransaction('0x' + serializedTx);
+		console.log('signedTx', signedTx);
 	}
 
 	render() {
@@ -90,20 +103,9 @@ class Home extends Component {
 					<h3>Game In Progress: {`${this.state.gameInProgress}`}</h3>
 				</Jumbotron>
 				<Jumbotron>
-					<h2>Add Wallet to Leaderboard</h2>
-					<div className="form-group">
-              <label>Enter Leaderboard:</label>
-              <input className="form-control" onChange={(event) => {
-                this.setState({ name: event.target.value })
-              }}
-              value={this.state.name} />
-            </div>
-					<button onClick={() => this.addPlayerToLeaderboard()} className="btn btn-primary">Signup for Leaderboard</button>
-				</Jumbotron>
-				<Jumbotron>
 					<div className="row">
 						<div className="col-xs-12 col-sm-12 col-md-12">
-							{this.state.players.length && 
+							{this.state.players.length ? 
 								<table className="table">
 									<thead>
 										<tr>
@@ -130,9 +132,20 @@ class Home extends Component {
 										})}
 									</tbody>
 								</table>
-							}
+							: null }
 						</div>
 					</div>
+				</Jumbotron>
+				<Jumbotron>
+					<h2>Add Wallet to Leaderboard</h2>
+					<div className="form-group">
+              <label>Enter Leaderboard:</label>
+              <input className="form-control" onChange={(event) => {
+                this.setState({ name: event.target.value })
+              }}
+              value={this.state.name} />
+            </div>
+					<button onClick={() => this.addPlayerToLeaderboard()} className="btn btn-primary">Signup for Leaderboard</button>
 				</Jumbotron>
 				<Jumbotron>
 						<h1>contract</h1>
