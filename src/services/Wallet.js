@@ -28,7 +28,8 @@ export default class WalletService {
 
 	}
 
+	// 
 	get publicKey() {
-		return this._wallet.getPublicKeyString();
+		return this._wallet.getAddressString();
 	}
 }
