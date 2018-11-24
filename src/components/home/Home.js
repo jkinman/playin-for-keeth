@@ -97,7 +97,7 @@ class Home extends Component {
 		// construct the transaction data
 		const txData = {
 			nonce: this.web3.utils.toHex(txCount),
-			gasLimit: this.web3.utils.toHex(1000000),
+			gasLimit: this.web3.utils.toHex(2000000),
 			gasPrice: this.web3.utils.toHex(2e9), // 2 Gwei
 			to: address,
 			from: this.walletService.publicKey,
