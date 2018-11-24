@@ -216,7 +216,7 @@ class Home extends Component {
 											<th scope="col">Name</th>
 											<th scope="col">Address</th>
 											<th scope="col">Wins</th>
-											<th scope="col">Ties</th>
+											<th scope="col">Losses</th>
 											<th scope="col">Disputed</th>
 										</tr>
 									</thead>
