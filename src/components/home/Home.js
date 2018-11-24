@@ -19,7 +19,10 @@ class Home extends Component {
 			game: {},
 			name: "",
 			balance: 0,
-			value: ""
+			betValue: "",
+			value: "",
+			chooseWinner: "",
+
 		}
 		// wallet stuff
 		this.walletService = new WalletService();
@@ -29,20 +32,23 @@ class Home extends Component {
 	}
 
 	async componentDidMount() {
-		const account = this.web3.eth.accounts.privateKeyToAccount(localStorage.privateKey);
-		console.log('acc', account);
-		let balance = await this.web3.eth.getBalance(this.walletService.publicKey);
-		this.setState({ balance: `${this.web3.utils.fromWei(balance)}` });
-		
+		const balance = await this.web3.eth.getBalance(this.walletService.publicKey);		
 		const gameInProgress = await leaderboard.methods.gameInProgress().call();
-    this.setState({ gameInProgress });
+		this.setState({ 
+			gameInProgress,
+			balance: `${this.web3.utils.fromWei(balance)}` 
+		});
     
     // watch game progress changes
     leaderboard.events.allEvents({fromBlock: `0`, toBlock: "latest"}, async (error, result) => {
       if(!error) {
         console.log('result', result);
         if (result.event === "UpdateGameProgress") {
-          return this.setState({ gameInProgress: result.returnValues[0] });
+					const balance = await this.web3.eth.getBalance(this.walletService.publicKey);
+					return this.setState({ 
+						gameInProgress: result.returnValues[0], 
+						balance: `${this.web3.utils.fromWei(balance)}`  
+					});
         };
 
         if (result.event === "PlayerUpdated") {
@@ -51,7 +57,16 @@ class Home extends Component {
           players[result.returnValues[0]] = player;
 
           return this.setState({ players });
-        }
+				}
+				
+				if (result.event === "GameUpdated") {
+					const game = await leaderboard.methods.game().call();
+					const balance = await this.web3.eth.getBalance(this.walletService.publicKey);
+					this.setState({ 
+						game,
+						balance: `${this.web3.utils.fromWei(balance)}` 
+					});
+				}
       } else {
         console.log('err', error)
       }
@@ -107,6 +122,65 @@ class Home extends Component {
 			value: this.web3.utils.toHex(this.web3.utils.toWei(value, "ether"))
 		};
 
+		return this.sendTransaction(txCount, txData);
+	}
+
+	addSecondPlayerToGame = async () => {
+		const addSecondPlayerHexCode = this.web3.eth.abi.encodeFunctionSignature("addSecondPlayerToGame()");
+
+		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
+		// construct the transaction data
+		const betValue = this.state.betValue ? this.state.betValue : "0";
+		const txData = {
+			nonce: this.web3.utils.toHex(txCount),
+			gasLimit: this.web3.utils.toHex(5000000),
+			gasPrice: this.web3.utils.toHex(2e9), // 2 Gwei
+			to: address,
+			from: this.walletService.publicKey,
+			data: addSecondPlayerHexCode,
+			value: this.web3.utils.toHex(this.web3.utils.toWei(betValue, "ether"))
+		};
+
+		return this.sendTransaction(txCount, txData);
+	}
+
+	closeGame = async () => {
+		const closeGameHexCode = this.web3.eth.abi.encodeFunctionSignature("closeGame()");
+
+		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
+
+		const txData = {
+			nonce: this.web3.utils.toHex(txCount),
+			gasLimit: this.web3.utils.toHex(5000000),
+			gasPrice: this.web3.utils.toHex(2e9), // 2 Gwei
+			to: address,
+			from: this.walletService.publicKey,
+			data: closeGameHexCode,
+		};
+
+		return this.sendTransaction(txCount, txData);	
+	}
+
+	declareWinner = async () => {
+		const winnerHexcode = this.web3.eth.abi.encodeFunctionCall({
+			name: "chooseWinner",
+			type: "function",
+			inputs: [{
+				type: 'string',
+				name: '_declaredWinner'
+			}]
+		},[this.state.chooseWinner]);
+
+		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
+		// construct the transaction data
+		const txData = {
+			nonce: this.web3.utils.toHex(txCount),
+			gasLimit: this.web3.utils.toHex(1000000),
+			gasPrice: this.web3.utils.toHex(2e9), // 2 Gwei
+			to: address,
+			from: this.walletService.publicKey,
+			data: winnerHexcode
+		};
 		return this.sendTransaction(txCount, txData);
 	}
 
@@ -187,7 +261,43 @@ class Home extends Component {
             </div>
 					<button onClick={() => this.createGame()} className="btn btn-primary">Create Game</button>
 				</Jumbotron>
+				<Jumbotron>
+					<h2>Close Game</h2>
+					<div className="form-group">
+            <label>Close Game</label>
+          </div>
+					<button onClick={() => this.closeGame()} className="btn btn-primary">Close Game</button>
+				</Jumbotron>
+				<Jumbotron>
 
+				<Jumbotron>
+					<h2>Add Second Player to Game</h2>
+					<div className="form-group">
+              <label>Add Player Two. Specify Bet Value if game requires it.</label>
+              <input className="form-control" onChange={(event) => {
+                this.setState({ betValue: event.target.value })
+              }}
+              value={this.state.betValue} />
+            </div>
+					<button onClick={() => this.addSecondPlayerToGame()} className="btn btn-primary">Add Player Two</button>
+				</Jumbotron>
+
+					<h2>Choose Winner</h2>
+					<div className="row">
+						<div className="col-xs-12 col-sm-12 col-md-12">
+							<div className="form-group">
+								<label>Choose Winner</label>
+								<select value={this.state.chooseWinner} onChange={(event) => this.setState({ chooseWinner: event.target.value}) }>
+									<option value="">--Choose Winner--</option>
+									<option value="first">First Player</option>
+									<option value="second">Second Player</option>
+									<option value="tie">Tie</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					<button onClick={() => this.declareWinner()} className="btn btn-primary">Choose Winner</button>
+				</Jumbotron>
 				<Jumbotron>
 					{this.state.gameInProgress ? 
 						<div className="row">
