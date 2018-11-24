@@ -4,7 +4,7 @@ import WalletService from '../../services/Wallet'
 import Web3Service from '../../services/Web3Service';
 import address from '../../address';
 import Tx from 'ethereumjs-tx'
-
+import Web3 from 'web3';
 
 // Contract
 import leaderboard from '../../leaderboard';
@@ -26,9 +26,10 @@ class Home extends Component {
 		}
 		// wallet stuff
 		this.walletService = new WalletService();
-		this.web3Service = new Web3Service(process.env.REACT_APP_INFURA_ENDPOINT);
-		// this.addPlayerToLeaderboard = this.addPlayerToLeaderboard.bind(this);
-		this.web3 = this.web3Service.web3;
+		// this.web3Service = new Web3Service(process.env.REACT_APP_INFURA_ENDPOINT);
+
+		// this.web3 = this.web3Service.web3;
+		this.web3 = new Web3(new Web3.providers.WebsocketProvider('wss://ropsten.infura.io/ws'));
 	}
 
 	async componentDidMount() {
