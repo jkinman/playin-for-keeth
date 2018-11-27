@@ -6,6 +6,7 @@ import Web3Service from '../../services/Web3Service';
 import address from '../../address';
 import Tx from 'ethereumjs-tx'
 import Web3 from 'web3';
+import { ToastContainer, toast } from 'react-toastify';
 
 // CSS
 import './Home.css';
@@ -97,8 +98,16 @@ class Home extends Component {
     }
 	}
 
+	changeBlockchainUI = (type, err) => {
+		if (err) {
+			this.setState({ [type]: false, [err]: true });
+		} else {
+			this.setState({ [type]: false })
+		}
+	}
+
 	addPlayerToLeaderboard = async () => {
-		console.log('clicked');
+		this.setState({ addingPlayerToLeaderboard: true })
 		const nameHexcode = this.web3.eth.abi.encodeFunctionCall({
 			name: "addPlayerToLeaderboard",
 			type: "function",
@@ -118,10 +127,18 @@ class Home extends Component {
 			from: this.walletService.publicKey,
 			data: nameHexcode
 		};
-		return this.sendTransaction(txCount, txData);
+
+		const tx = await this.sendTransaction(txCount, txData);
+		if (tx.name === "Error") {
+			console.log('blarg');
+			this.changeBlockchainUI("addingPlayerToLeaderboard", "addingPlayerToLeaderboardError");
+		} else {
+			this.changeBlockchainUI("addingPlayerToLeaderboard", undefined);
+		}
 	}
 
 	createGame = async () => {
+		this.setState({ creatingGame: true, creatingGameError: false });
 		const gameHexCode = this.web3.eth.abi.encodeFunctionSignature("createGame()");
 
 		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
@@ -137,10 +154,18 @@ class Home extends Component {
 			value: this.web3.utils.toHex(this.web3.utils.toWei(value, "ether"))
 		};
 
-		return this.sendTransaction(txCount, txData);
+
+		const tx = await this.sendTransaction(txCount, txData);
+		if (tx.name === "Error") {
+			this.changeBlockchainUI("creatingGame", "creatingGameError");
+		} else {
+			this.changeBlockchainUI("creatingGame", undefined);
+		}
+
 	}
 
 	addSecondPlayerToGame = async () => {
+		this.setState({ addingSecondPlayerToGame: true });
 		const addSecondPlayerHexCode = this.web3.eth.abi.encodeFunctionSignature("addSecondPlayerToGame()");
 
 		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
@@ -156,10 +181,17 @@ class Home extends Component {
 			value: this.web3.utils.toHex(this.web3.utils.toWei(betValue, "ether"))
 		};
 
-		return this.sendTransaction(txCount, txData);
+		const tx = await this.sendTransaction(txCount, txData);
+		if (tx.name === "Error") {
+			this.changeBlockchainUI("addingSecondPlayerToGame", "addingSecondPlayerToGameError");
+		} else {
+			this.changeBlockchainUI("addingSecondPlayerToGame", undefined);
+		}
 	}
 
 	closeGame = async () => {
+		this.setState({ closingGame: true });
+
 		const closeGameHexCode = this.web3.eth.abi.encodeFunctionSignature("closeGame()");
 
 		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
@@ -173,10 +205,16 @@ class Home extends Component {
 			data: closeGameHexCode,
 		};
 
-		return this.sendTransaction(txCount, txData);	
+		const tx = await this.sendTransaction(txCount, txData);
+		if (tx.name === "Error") {
+			this.changeBlockchainUI("closingGame", "closingGameError");
+		} else {
+			this.changeBlockchainUI("closingGame", undefined);
+		}
 	}
 
 	declareWinner = async () => {
+		this.setState({ declaringWinnerCall: true })
 		const winnerHexcode = this.web3.eth.abi.encodeFunctionCall({
 			name: "chooseWinner",
 			type: "function",
@@ -196,7 +234,14 @@ class Home extends Component {
 			from: this.walletService.publicKey,
 			data: winnerHexcode
 		};
-		return this.sendTransaction(txCount, txData);
+
+		const tx = await this.sendTransaction(txCount, txData);
+		if (tx.name === "Error") {
+			this.changeBlockchainUI("declaringWinnerCall", "declaringWinnerCallError");
+		} else {
+			this.changeBlockchainUI("declaringWinnerCall", undefined);
+			console.log('err', tx.response);
+		}
 	}
 
 	sendTransaction = async (txCount, txData) => {
@@ -208,8 +253,10 @@ class Home extends Component {
 		try {
 			const signedTx = await this.web3.eth.sendSignedTransaction('0x' + serializedTx);
 			console.log('signedTx', signedTx);
+			return signedTx;
 		} catch(err) {
 			console.log('err', err);
+			return err;
 		}
 	}
 
@@ -221,9 +268,32 @@ class Home extends Component {
 		}, 2000);
 	}
 
+	notify = (text) => {
+		const closeButton = ({ closeToast }) => <button onClick={ closeToast }><i name="close" className="fas fa-times" /></button>;
+		// const closeButton = <ToastCloseButton />;
+
+		if (!toast.isActive(this.toast)) {
+			return (
+				this.toast = toast(`Error: ${text}`, {
+					position: 'bottom-left',
+					draggable: false,
+					draggablePercent: 0,
+					closeButton
+				})
+			);
+		}
+		return (
+				toast.update(this.toast, {
+					render: `Error: ${text}`
+				})
+		);
+
+	}
+
 	render() {
 		return(
 			<div>
+				<ToastContainer />
 				<Jumbotron>
 					<h1>Your ETH Wallet Public Key</h1>
 					<p>Fund me to play!</p>
@@ -284,7 +354,10 @@ class Home extends Component {
               }}
               value={this.state.name} />
             </div>
-					<button onClick={() => this.addPlayerToLeaderboard()} className="btn btn-primary">Signup for Leaderboard</button>
+					{this.state.addingPlayerToLeaderboard && <p>Transaction pending...</p>}
+					{!this.state.addingPlayerToLeaderboard && 
+						<button onClick={() => this.addPlayerToLeaderboard()} className="btn btn-primary">Signup for Leaderboard</button>
+					}
 				</Jumbotron>
 				<Jumbotron>
 					<h2>Create Game</h2>
@@ -295,14 +368,18 @@ class Home extends Component {
               }}
               value={this.state.value} />
             </div>
-					<button onClick={() => this.createGame()} className="btn btn-primary">Create Game</button>
+					{this.state.creatingGame && <p>Transaction pending...</p>}
+					{!this.state.creatingGame && 
+						<button onClick={() => this.createGame()} className="btn btn-primary">Create Game</button>
+					}
 				</Jumbotron>
 				<Jumbotron>
 					<h2>Close Game</h2>
 					<div className="form-group">
             <label>Ends game immediately. Any bet is returned to user.</label>
           </div>
-					<button onClick={() => this.closeGame()} className="btn btn-primary">Close Game</button>
+					{this.state.closingGame && <p>Transaction pending...</p>}
+					{!this.state.closingGame && <button onClick={() => this.closeGame()} className="btn btn-primary">Close Game</button>}
 				</Jumbotron>
 				<Jumbotron>
 
@@ -315,7 +392,8 @@ class Home extends Component {
               }}
               value={this.state.betValue} />
             </div>
-					<button onClick={() => this.addSecondPlayerToGame()} className="btn btn-primary">Add Player Two</button>
+					{this.state.addingSecondPlayerToGame && <p>Transaction pending...</p>}
+					{!this.state.addingSecondPlayerToGame && <button onClick={() => this.addSecondPlayerToGame()} className="btn btn-primary">Add Player Two</button>}
 				</Jumbotron>
 
 					<h2>Choose Winner</h2>
@@ -332,7 +410,8 @@ class Home extends Component {
 							</div>
 						</div>
 					</div>
-					<button onClick={() => this.declareWinner()} className="btn btn-primary">Choose Winner</button>
+					{this.state.declaringWinnerCall && <p>Transaction pending...</p>}
+					{!this.state.declaringWinnerCall && <button onClick={() => this.declareWinner()} className="btn btn-primary">Choose Winner</button>}
 				</Jumbotron>
 				<Jumbotron>
 					{this.state.gameInProgress ? 
