@@ -6,6 +6,9 @@ import address from '../../address';
 import Tx from 'ethereumjs-tx'
 import Web3 from 'web3';
 
+// CSS
+import './Home.css';
+
 // Contract
 import leaderboard from '../../leaderboard';
 
@@ -210,32 +213,34 @@ class Home extends Component {
 					<div className="row">
 						<div className="col-xs-12 col-sm-12 col-md-12">
 							{this.state.players.length ? 
-								<table className="table">
-									<thead>
-										<tr>
-											<th scope="col">ID</th>
-											<th scope="col">Name</th>
-											<th scope="col">Address</th>
-											<th scope="col">Wins</th>
-											<th scope="col">Losses</th>
-											<th scope="col">Disputed</th>
-										</tr>
-									</thead>
-									<tbody>
-										{this.state.players.map( (player, index) => {
-											return (
-												<tr key={index}>
-													<th scope="row">{index}</th>
-													<th scope="col">{player.name}</th>
-													<th scope="col">{player.playerAddress}</th>
-													<th scope="col">{player.wins}</th>
-													<th scope="col">{player.losses}</th>
-													<th scope="col">{player.numDisputedGames}</th>
-												</tr>
-											)
-										})}
-									</tbody>
-								</table>
+								<div className='table-responsive'>
+									<table className="Home-table table">
+										<thead className="Home-table-head">
+											<tr className="Home-table-body">
+												<th scope="col">ID</th>
+												<th scope="col">Name</th>
+												<th scope="col">Address</th>
+												<th scope="col">Wins</th>
+												<th scope="col">Losses</th>
+												<th scope="col">Ties</th>
+											</tr>
+										</thead>
+										<tbody className="Home-table-body">
+											{this.state.players.map( (player, index) => {
+												return (
+													<tr className="Home-table-row" key={index}>
+														<th scope="row">{index}</th>
+														<th scope="col">{player.name}</th>
+														<th scope="col">{player.playerAddress}</th>
+														<th scope="col">{player.wins}</th>
+														<th scope="col">{player.losses}</th>
+														<th scope="col">{player.ties}</th>
+													</tr>
+												)
+											})}
+										</tbody>
+									</table>
+								</div>
 							: null }
 						</div>
 					</div>
