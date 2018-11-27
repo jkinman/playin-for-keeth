@@ -5,3 +5,7 @@
   /* overflow-x: auto;
   white-space: nowrap; */
 }
+
+.address {
+  word-break: break-word;
+}

@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
-import {Jumbotron} from 'reactstrap'
+import {Jumbotron} from 'reactstrap';
+import {CopyToClipboard} from 'react-copy-to-clipboard';
 import WalletService from '../../services/Wallet'
 import Web3Service from '../../services/Web3Service';
 import address from '../../address';
@@ -25,7 +26,17 @@ class Home extends Component {
 			betValue: "",
 			value: "",
 			chooseWinner: "",
-
+			copied: false,
+			creatingGame: false,
+			creatingGameError: false,
+			addingPlayerToLeaderboard: false,
+			addingPlayerToLeaderboardError: false,
+			addingSecondPlayerToGame: false,
+			addingSecondPlayerToGameError: false,
+			closingGame: false,
+			closingGameError: false,
+			declaringWinnerCall: false,
+			declaringWinnerCallError: false
 		}
 		// wallet stuff
 		this.walletService = new WalletService();
@@ -193,9 +204,21 @@ class Home extends Component {
 		const pk = new Buffer(localStorage.privateKey.substring(2, localStorage.privateKey.length), 'hex')
 		console.log('pk', pk);
 		transaction.sign(pk);
-		const serializedTx = transaction.serialize().toString('hex')
-		const signedTx = await this.web3.eth.sendSignedTransaction('0x' + serializedTx);
-		console.log('signedTx', signedTx);
+		const serializedTx = transaction.serialize().toString('hex');
+		try {
+			const signedTx = await this.web3.eth.sendSignedTransaction('0x' + serializedTx);
+			console.log('signedTx', signedTx);
+		} catch(err) {
+			console.log('err', err);
+		}
+	}
+
+	handlePublicKeyCopy = () => {
+		this.setState({ copied: true });
+
+		setTimeout( () => {
+			this.setState({ copied: false })
+		}, 2000);
 	}
 
 	render() {
@@ -204,9 +227,16 @@ class Home extends Component {
 				<Jumbotron>
 					<h1>Your ETH Wallet Public Key</h1>
 					<p>Fund me to play!</p>
-					<p>{this.walletService.publicKey}</p>
+					<p className="address">{this.walletService.publicKey}</p>
+					{this.state.copied &&
+						<p className="success">Copied to clipboard.</p>
+					}
+          <CopyToClipboard text={this.walletService.publicKey}
+            onCopy={() => this.handlePublicKeyCopy()}>
+            <button className="btn btn-primary">Copy Wallet Address</button>
+          </CopyToClipboard>
 					<p>Balance: {this.state.balance} ETH</p>
-					<h3>Contract Address: {address}</h3>
+					<h3 className="address">Contract Address: {address}</h3>
 					<h3>Game In Progress: {`${this.state.gameInProgress}`}</h3>
 				</Jumbotron>
 				<Jumbotron>
@@ -246,9 +276,9 @@ class Home extends Component {
 					</div>
 				</Jumbotron>
 				<Jumbotron>
-					<h2>Add Wallet to Leaderboard</h2>
+					<h2>Add Player to Leaderboard</h2>
 					<div className="form-group">
-              <label>Enter Leaderboard:</label>
+              <label>Input Name:</label>
               <input className="form-control" onChange={(event) => {
                 this.setState({ name: event.target.value })
               }}
@@ -259,7 +289,7 @@ class Home extends Component {
 				<Jumbotron>
 					<h2>Create Game</h2>
 					<div className="form-group">
-              <label>Create Game (add ETH amount to input if you want to gamble)</label>
+              <label>Add ETH amount to input if you want to gamble, otherwise just click button</label>
               <input className="form-control" onChange={(event) => {
                 this.setState({ value: event.target.value })
               }}
@@ -270,7 +300,7 @@ class Home extends Component {
 				<Jumbotron>
 					<h2>Close Game</h2>
 					<div className="form-group">
-            <label>Close Game</label>
+            <label>Ends game immediately. Any bet is returned to user.</label>
           </div>
 					<button onClick={() => this.closeGame()} className="btn btn-primary">Close Game</button>
 				</Jumbotron>
