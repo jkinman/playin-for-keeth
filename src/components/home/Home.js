@@ -10,6 +10,7 @@ import { ToastContainer, toast } from 'react-toastify';
 
 // CSS
 import './Home.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Contract
 import leaderboard from '../../leaderboard';
@@ -132,6 +133,7 @@ class Home extends Component {
 		if (tx.name === "Error") {
 			console.log('blarg');
 			this.changeBlockchainUI("addingPlayerToLeaderboard", "addingPlayerToLeaderboardError");
+			this.notify("Adding Player Leaderboard call failed.")
 		} else {
 			this.changeBlockchainUI("addingPlayerToLeaderboard", undefined);
 		}
@@ -158,6 +160,7 @@ class Home extends Component {
 		const tx = await this.sendTransaction(txCount, txData);
 		if (tx.name === "Error") {
 			this.changeBlockchainUI("creatingGame", "creatingGameError");
+			this.notify("Creating Game call failed.")
 		} else {
 			this.changeBlockchainUI("creatingGame", undefined);
 		}
@@ -183,6 +186,7 @@ class Home extends Component {
 
 		const tx = await this.sendTransaction(txCount, txData);
 		if (tx.name === "Error") {
+			this.notify("Add second player to game failed.")
 			this.changeBlockchainUI("addingSecondPlayerToGame", "addingSecondPlayerToGameError");
 		} else {
 			this.changeBlockchainUI("addingSecondPlayerToGame", undefined);
@@ -207,6 +211,7 @@ class Home extends Component {
 
 		const tx = await this.sendTransaction(txCount, txData);
 		if (tx.name === "Error") {
+			this.notify("Close game call failed.")
 			this.changeBlockchainUI("closingGame", "closingGameError");
 		} else {
 			this.changeBlockchainUI("closingGame", undefined);
@@ -237,6 +242,7 @@ class Home extends Component {
 
 		const tx = await this.sendTransaction(txCount, txData);
 		if (tx.name === "Error") {
+			this.notify("Declare winner call failed.")
 			this.changeBlockchainUI("declaringWinnerCall", "declaringWinnerCallError");
 		} else {
 			this.changeBlockchainUI("declaringWinnerCall", undefined);
@@ -270,7 +276,6 @@ class Home extends Component {
 
 	notify = (text) => {
 		const closeButton = ({ closeToast }) => <button onClick={ closeToast }><i name="close" className="fas fa-times" /></button>;
-		// const closeButton = <ToastCloseButton />;
 
 		if (!toast.isActive(this.toast)) {
 			return (
@@ -293,7 +298,7 @@ class Home extends Component {
 	render() {
 		return(
 			<div>
-				<ToastContainer />
+				<ToastContainer  />
 				<Jumbotron>
 					<h1>Your ETH Wallet Public Key</h1>
 					<p>Fund me to play!</p>
