@@ -9,3 +9,8 @@
 .address {
   word-break: break-word;
 }
+
+input.form-control {
+  margin: 0 auto;
+  max-width: 500px;
+}

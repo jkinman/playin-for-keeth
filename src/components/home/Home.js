@@ -55,6 +55,10 @@ class Home extends Component {
 			gameInProgress,
 			balance: `${this.web3.utils.fromWei(balance)}` 
 		});
+
+		const player = await leaderboard.methods.player(this.walletService.publicKey).call();
+
+		console.log('p', player);
     
     // watch game progress changes
     leaderboard.events.allEvents({fromBlock: `0`, toBlock: "latest"}, async (error, result) => {
@@ -168,7 +172,7 @@ class Home extends Component {
 	}
 
 	addSecondPlayerToGame = async () => {
-		this.setState({ addingSecondPlayerToGame: true });
+		this.setState({ addingSecondPlayerToGame: true,addingSecondPlayerToGameError: false  });
 		const addSecondPlayerHexCode = this.web3.eth.abi.encodeFunctionSignature("addSecondPlayerToGame()");
 
 		const txCount = await this.web3.eth.getTransactionCount(this.walletService.publicKey);
@@ -194,7 +198,7 @@ class Home extends Component {
 	}
 
 	closeGame = async () => {
-		this.setState({ closingGame: true });
+		this.setState({ closingGame: true, closingGameError: false });
 
 		const closeGameHexCode = this.web3.eth.abi.encodeFunctionSignature("closeGame()");
 
@@ -219,7 +223,7 @@ class Home extends Component {
 	}
 
 	declareWinner = async () => {
-		this.setState({ declaringWinnerCall: true })
+		this.setState({ declaringWinnerCall: true, declaringWinnerCallError: false })
 		const winnerHexcode = this.web3.eth.abi.encodeFunctionCall({
 			name: "chooseWinner",
 			type: "function",
